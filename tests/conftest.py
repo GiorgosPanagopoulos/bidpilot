@@ -3,7 +3,7 @@ import os
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017")
 
-from datetime import datetime, timedelta, timezone  # noqa: E402
+from datetime import UTC, datetime, timedelta  # noqa: E402
 from decimal import Decimal  # noqa: E402
 
 import pytest  # noqa: E402
@@ -29,7 +29,7 @@ def open_tender_meta() -> dict:
         "cpv": "45000000,72000000",
         "nuts": "EL30",
         "budget": "2000000",
-        "deadline": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+        "deadline": (datetime.now(UTC) + timedelta(days=30)).isoformat(),
         "status": "open",
     }
 
@@ -40,7 +40,7 @@ def closed_tender_meta() -> dict:
         "cpv": "45000000",
         "nuts": "EL30",
         "budget": "2000000",
-        "deadline": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+        "deadline": (datetime.now(UTC) - timedelta(days=1)).isoformat(),
         "status": "open",
     }
 
@@ -52,7 +52,7 @@ def ted_notice_payload() -> dict:
         "TI": "Road Construction Services",
         "PC": ["45000000", "45233000"],
         "TW": ["EL30"],
-        "DD": (datetime.now(timezone.utc) + timedelta(days=60)).strftime("%Y%m%d"),
+        "DD": (datetime.now(UTC) + timedelta(days=60)).strftime("%Y%m%d"),
         "TVA": "3500000",
         "TE": "Construction of road infrastructure in Attica region.",
         "uri": "https://ted.europa.eu/en/notice/12345678",

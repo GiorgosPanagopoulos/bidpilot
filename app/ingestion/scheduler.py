@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -17,7 +17,7 @@ _scheduler: AsyncIOScheduler | None = None
 
 async def ingest_pipeline(since: datetime | None = None) -> int:
     if since is None:
-        since = datetime.now(timezone.utc) - timedelta(days=1)
+        since = datetime.now(UTC) - timedelta(days=1)
     source = TEDSource()
     raw_list = await source.fetch(since)
     count = 0

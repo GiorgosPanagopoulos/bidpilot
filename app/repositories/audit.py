@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.core.context import current_tenant
@@ -16,7 +16,7 @@ async def _write(action: str, payload: dict[str, Any]) -> None:
             "tenant": current_tenant.get(),
             "action": action,
             "payload": payload,
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
         }
         await get_db()[COLLECTION].insert_one(doc)
     except Exception as exc:

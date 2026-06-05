@@ -1,6 +1,6 @@
+from app.core.exceptions import NotFoundError
 from app.models.company import CompanyProfile
 from app.repositories.mongo import get_db
-from app.core.exceptions import NotFoundError
 
 COLLECTION = "companies"
 

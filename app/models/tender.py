@@ -1,18 +1,19 @@
+import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
+
 from pydantic import BaseModel, Field
-import uuid
 
 
-class TenderSource(str, Enum):
+class TenderSource(StrEnum):
     TED = "TED"
     KIMDIS = "KIMDIS"
     ESIDIS = "ESIDIS"
 
 
-class TenderStatus(str, Enum):
+class TenderStatus(StrEnum):
     OPEN = "open"
     CLOSED = "closed"
     AWARDED = "awarded"

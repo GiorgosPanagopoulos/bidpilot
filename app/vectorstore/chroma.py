@@ -5,6 +5,7 @@ from typing import Any
 
 import chromadb
 from chromadb import Collection
+from chromadb.api import ClientAPI
 
 from app.core.settings import settings
 from app.models.tender import Tender
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 COLLECTION_NAME = "tenders"
 
-_client: chromadb.PersistentClient | None = None
+_client: ClientAPI | None = None
 _collection: Collection | None = None
 
 
@@ -63,9 +64,14 @@ def query_tenders(
     if where:
         kwargs["where"] = where
     result = col.query(**kwargs)
-    ids = result["ids"][0]
-    metadatas = result["metadatas"][0]
-    distances = result["distances"][0]
+    raw_ids = result["ids"]
+    raw_metadatas = result["metadatas"]
+    raw_distances = result["distances"]
+    if raw_ids is None or raw_metadatas is None or raw_distances is None:
+        return []
+    ids = raw_ids[0]
+    metadatas = raw_metadatas[0]
+    distances = raw_distances[0]
     return [
         {"id": tid, "metadata": meta, "distance": dist}
         for tid, meta, dist in zip(ids, metadatas, distances)

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
-import yaml
 
 from app.matching.eligibility import EligibilityEngine
 from app.models.company import CompanyProfile
@@ -32,7 +31,7 @@ def _tender(**kwargs) -> Tender:
         title="Test Tender",
         cpv_codes=["45000000"],
         budget=Decimal("2000000"),
-        deadline=datetime.now(timezone.utc) + timedelta(days=30),
+        deadline=datetime.now(UTC) + timedelta(days=30),
         nuts=["EL30"],
         description="civil engineering and project management services",
         exclusion_flags=[],
@@ -71,7 +70,7 @@ def test_financial_hard_fail(default_engine):
 
 def test_deadline_hard_fail(default_engine):
     company = _company()
-    tender = _tender(deadline=datetime.now(timezone.utc) + timedelta(days=1))
+    tender = _tender(deadline=datetime.now(UTC) + timedelta(days=1))
     result = default_engine.check(company, tender)
     assert result.passed is False
     assert any("lead window" in c for c in result.failed_criteria)

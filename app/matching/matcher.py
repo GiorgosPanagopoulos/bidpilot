@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from app.core.exceptions import MatchingError
@@ -47,8 +47,8 @@ def _deadline_future(deadline_str: str) -> bool:
     try:
         dl = datetime.fromisoformat(deadline_str)
         if dl.tzinfo is None:
-            dl = dl.replace(tzinfo=timezone.utc)
-        return dl > datetime.now(timezone.utc)
+            dl = dl.replace(tzinfo=UTC)
+        return dl > datetime.now(UTC)
     except Exception:
         return False
 
@@ -117,9 +117,9 @@ def _meta_to_tender(tid: str, meta: dict) -> Tender:
     try:
         deadline = datetime.fromisoformat(deadline_str)
         if deadline.tzinfo is None:
-            deadline = deadline.replace(tzinfo=timezone.utc)
+            deadline = deadline.replace(tzinfo=UTC)
     except (ValueError, TypeError):
-        deadline = datetime.now(timezone.utc)
+        deadline = datetime.now(UTC)
 
     status_str = meta.get("status", "open")
     try:

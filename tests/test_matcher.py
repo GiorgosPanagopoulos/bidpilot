@@ -1,7 +1,5 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-
-import pytest
 
 from app.matching.matcher import (
     _budget_feasible,
@@ -45,12 +43,12 @@ def test_budget_feasible_empty():
 
 
 def test_deadline_future():
-    future = (datetime.now(timezone.utc) + timedelta(days=10)).isoformat()
+    future = (datetime.now(UTC) + timedelta(days=10)).isoformat()
     assert _deadline_future(future) is True
 
 
 def test_deadline_past():
-    past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    past = (datetime.now(UTC) - timedelta(days=1)).isoformat()
     assert _deadline_future(past) is False
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 
 import httpx
@@ -97,10 +97,10 @@ def _parse_date(value: object) -> datetime:
     if isinstance(value, str):
         for fmt in ("%Y%m%d", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"):
             try:
-                return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+                return datetime.strptime(value, fmt).replace(tzinfo=UTC)
             except ValueError:
                 continue
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _parse_decimal(value: object) -> Decimal | None:

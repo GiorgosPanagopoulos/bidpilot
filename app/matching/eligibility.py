@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -66,8 +66,8 @@ class EligibilityEngine:
         min_lead_days: int = int(self._config["min_lead_days"])
         deadline = tender.deadline
         if deadline.tzinfo is None:
-            deadline = deadline.replace(tzinfo=timezone.utc)
-        cutoff = datetime.now(timezone.utc) + timedelta(days=min_lead_days)
+            deadline = deadline.replace(tzinfo=UTC)
+        cutoff = datetime.now(UTC) + timedelta(days=min_lead_days)
         if deadline <= cutoff:
             failed.append(
                 f"deadline {deadline.date()} within {min_lead_days}-day lead window"

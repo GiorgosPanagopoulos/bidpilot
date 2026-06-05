@@ -1,5 +1,6 @@
 import logging
 import sys
+
 from app.core.settings import settings
 
 
