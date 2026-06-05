@@ -8,7 +8,7 @@
 
 <br/><br/>
 
-<img src="assets/bidpilot-graphical-abstract.svg" alt="BidPilot Graphical Abstract" width="800"/>
+<img src="https://raw.githubusercontent.com/GiorgosPanagopoulos/bidpilot/main/assets/bidpilot-graphical-abstract.png" width="900" alt="BidPilot architecture" />
 
 </div>
 
