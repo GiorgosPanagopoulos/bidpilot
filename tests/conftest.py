@@ -1,9 +1,14 @@
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+import os
 
-import pytest
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
+os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017")
 
-from app.models.company import CompanyProfile
+from datetime import datetime, timedelta, timezone  # noqa: E402
+from decimal import Decimal  # noqa: E402
+
+import pytest  # noqa: E402
+
+from app.models.company import CompanyProfile  # noqa: E402
 
 
 @pytest.fixture()

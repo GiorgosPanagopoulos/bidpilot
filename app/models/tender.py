@@ -33,4 +33,5 @@ class Tender(BaseModel):
     nuts: list[str] = Field(default_factory=list)
     description: str = ""
     raw_doc_uri: str = ""
+    exclusion_flags: list[str] = Field(default_factory=list)
     status: TenderStatus = TenderStatus.OPEN

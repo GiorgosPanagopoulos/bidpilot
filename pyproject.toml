@@ -17,6 +17,7 @@ dependencies = [
     "langchain-anthropic>=0.1.15",
     "apscheduler>=3.10.4",
     "httpx>=0.27.0",
+    "PyYAML>=6.0",
 ]
 
 [project.optional-dependencies]

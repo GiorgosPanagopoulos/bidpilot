@@ -4,6 +4,7 @@
 
 **AI-powered tender intelligence for suppliers.**
 
+[![CI](https://github.com/GiorgosPanagopoulos/bidpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/GiorgosPanagopoulos/bidpilot/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-0.5-FF6B35?style=for-the-badge)

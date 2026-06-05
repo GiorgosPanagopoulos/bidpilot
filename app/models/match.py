@@ -5,6 +5,7 @@ class EligibilityCheck(BaseModel):
     passed: bool
     failed_criteria: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    rule_version: str = ""
 
 
 class MatchResult(BaseModel):

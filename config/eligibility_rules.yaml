@@ -1,0 +1,4 @@
+min_turnover_ratio: 1.0
+min_lead_days: 3
+technical_coverage_threshold: 0.5
+rule_version: "1.0.0"

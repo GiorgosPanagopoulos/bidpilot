@@ -35,11 +35,14 @@ def upsert_tender_embedding(tender: Tender) -> None:
     col = _get_collection()
     text = _tender_text(tender)
     meta: dict[str, Any] = {
+        "title": tender.title,
         "cpv": ",".join(tender.cpv_codes),
         "nuts": ",".join(tender.nuts),
         "budget": str(tender.budget) if tender.budget else "",
         "deadline": tender.deadline.isoformat(),
         "status": tender.status.value,
+        "description": tender.description,
+        "exclusion_flags": ",".join(tender.exclusion_flags),
     }
     # ChromaDB default embedding function (sentence-transformers) used for Phase 1;
     # swap for Voyage-3 via langchain-anthropic in Phase 3 when prompt layer is ready.

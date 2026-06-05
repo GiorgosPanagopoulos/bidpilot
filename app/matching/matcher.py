@@ -6,8 +6,10 @@ from decimal import Decimal
 
 from app.core.exceptions import MatchingError
 from app.core.settings import settings
+from app.matching.eligibility import engine
 from app.models.company import CompanyProfile
 from app.models.match import EligibilityCheck, MatchResult
+from app.models.tender import Tender, TenderStatus
 from app.vectorstore.chroma import query_tenders
 
 logger = logging.getLogger(__name__)
@@ -103,6 +105,42 @@ def _rule_score_and_reasons(
     return score, reasons, eligibility
 
 
+def _meta_to_tender(tid: str, meta: dict) -> Tender:
+    cpv_codes = [c.strip() for c in meta.get("cpv", "").split(",") if c.strip()]
+    nuts = [n.strip() for n in meta.get("nuts", "").split(",") if n.strip()]
+    exclusion_flags = [f.strip() for f in meta.get("exclusion_flags", "").split(",") if f.strip()]
+
+    budget_str = meta.get("budget", "")
+    budget = Decimal(budget_str) if budget_str else None
+
+    deadline_str = meta.get("deadline", "")
+    try:
+        deadline = datetime.fromisoformat(deadline_str)
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        deadline = datetime.now(timezone.utc)
+
+    status_str = meta.get("status", "open")
+    try:
+        status = TenderStatus(status_str)
+    except ValueError:
+        status = TenderStatus.OPEN
+
+    return Tender(
+        id=tid,
+        source="TED",
+        title=meta.get("title", ""),
+        cpv_codes=cpv_codes,
+        nuts=nuts,
+        budget=budget,
+        deadline=deadline,
+        description=meta.get("description", ""),
+        exclusion_flags=exclusion_flags,
+        status=status,
+    )
+
+
 async def run_matching(profile: CompanyProfile) -> list[MatchResult]:
     try:
         query = _build_query(profile)
@@ -117,10 +155,19 @@ async def run_matching(profile: CompanyProfile) -> list[MatchResult]:
         distance = candidate.get("distance", 1.0)
         semantic_score = max(0.0, 1.0 - float(distance))
 
-        rule_score, reasons, eligibility = _rule_score_and_reasons(profile, meta)
+        rule_score, reasons, base_eligibility = _rule_score_and_reasons(profile, meta)
 
-        if not eligibility.passed:
-            continue
+        tender = _meta_to_tender(tid, meta)
+        engine_eligibility = engine.check(profile, tender)
+
+        # Merge phase-1 checks with the declarative engine result
+        merged_passed = base_eligibility.passed and engine_eligibility.passed
+        merged = EligibilityCheck(
+            passed=merged_passed,
+            failed_criteria=base_eligibility.failed_criteria + engine_eligibility.failed_criteria,
+            warnings=base_eligibility.warnings + engine_eligibility.warnings,
+            rule_version=engine_eligibility.rule_version,
+        )
 
         final_score = (
             settings.weight_semantic * semantic_score
@@ -134,9 +181,10 @@ async def run_matching(profile: CompanyProfile) -> list[MatchResult]:
                 semantic_score=semantic_score,
                 rule_score=rule_score,
                 reasons=reasons,
-                eligibility=eligibility,
+                eligibility=merged,
             )
         )
 
-    results.sort(key=lambda r: r.score, reverse=True)
+    # Passed candidates first (by score desc), disqualified sorted to bottom
+    results.sort(key=lambda r: (not r.eligibility.passed, -r.score))
     return results
