@@ -1,6 +1,8 @@
 <div align="center">
 
-<h1>🎯 BidPilot</h1>
+<img src="https://raw.githubusercontent.com/GiorgosPanagopoulos/bidpilot/main/assets/bidpilot-logo.png" width="480" alt="BidPilot logo" />
+
+<br/>
 
 <strong>AI-Native Tender Intelligence for Suppliers</strong>
 

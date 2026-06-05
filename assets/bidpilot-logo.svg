@@ -1,0 +1,28 @@
+<svg width="760" height="220" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e7c873"/>
+      <stop offset="1" stop-color="#c9a84c"/>
+    </linearGradient>
+  </defs>
+  <rect width="760" height="220" rx="28" fill="#0f1117"/>
+
+  <!-- icon box -->
+  <rect x="48" y="50" width="120" height="120" rx="26" fill="#161a22" stroke="#c9a84c" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- ascending trajectory -->
+  <circle cx="76" cy="144" r="4" fill="#c9a84c" fill-opacity="0.4"/>
+  <circle cx="92" cy="128" r="4" fill="#c9a84c" fill-opacity="0.6"/>
+
+  <!-- paper-plane / send mark, ascending up-right -->
+  <g transform="translate(108,110) rotate(-38)">
+    <path d="M-34 14 L40 0 L-34 -14 L-22 0 Z" fill="url(#gold)"/>
+    <path d="M-22 0 L40 0" stroke="#0f1117" stroke-width="2" stroke-opacity="0.25"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="206" y="118" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="58" font-weight="700" letter-spacing="-1">
+    <tspan fill="#f5f6f8">Bid</tspan><tspan fill="url(#gold)">Pilot</tspan>
+  </text>
+  <text x="208" y="150" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="500" letter-spacing="6" fill="#8b93a7">TENDER INTELLIGENCE</text>
+</svg>
