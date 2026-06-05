@@ -1,0 +1,36 @@
+from datetime import datetime
+from decimal import Decimal
+from enum import Enum
+from typing import Any, Literal
+from pydantic import BaseModel, Field
+import uuid
+
+
+class TenderSource(str, Enum):
+    TED = "TED"
+    KIMDIS = "KIMDIS"
+    ESIDIS = "ESIDIS"
+
+
+class TenderStatus(str, Enum):
+    OPEN = "open"
+    CLOSED = "closed"
+    AWARDED = "awarded"
+
+
+class RawTender(BaseModel):
+    source: TenderSource
+    payload: dict[str, Any]
+
+
+class Tender(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    source: Literal["TED", "KIMDIS", "ESIDIS"]
+    title: str
+    cpv_codes: list[str] = Field(default_factory=list)
+    budget: Decimal | None = None
+    deadline: datetime
+    nuts: list[str] = Field(default_factory=list)
+    description: str = ""
+    raw_doc_uri: str = ""
+    status: TenderStatus = TenderStatus.OPEN
