@@ -69,9 +69,7 @@ class EligibilityEngine:
             deadline = deadline.replace(tzinfo=UTC)
         cutoff = datetime.now(UTC) + timedelta(days=min_lead_days)
         if deadline <= cutoff:
-            failed.append(
-                f"deadline {deadline.date()} within {min_lead_days}-day lead window"
-            )
+            failed.append(f"deadline {deadline.date()} within {min_lead_days}-day lead window")
 
         # TECHNICAL (soft)
         threshold: float = float(self._config["technical_coverage_threshold"])

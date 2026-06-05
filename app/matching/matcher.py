@@ -169,10 +169,7 @@ async def run_matching(profile: CompanyProfile) -> list[MatchResult]:
             rule_version=engine_eligibility.rule_version,
         )
 
-        final_score = (
-            settings.weight_semantic * semantic_score
-            + settings.weight_rule * rule_score
-        )
+        final_score = settings.weight_semantic * semantic_score + settings.weight_rule * rule_score
         results.append(
             MatchResult(
                 tender_id=tid,
