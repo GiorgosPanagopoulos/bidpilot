@@ -29,6 +29,9 @@ dev = [
     "detect-secrets>=1.5.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
