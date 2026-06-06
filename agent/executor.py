@@ -48,7 +48,8 @@ def _build_trace(messages: list[Any]) -> list[dict[str, Any]]:
                     "observation": "",
                 }
                 trace.append(step)
-                pending[tc["id"]] = step
+                if tc["id"] is not None:
+                    pending[tc["id"]] = step
         elif isinstance(msg, ToolMessage):
             step_ref = pending.pop(msg.tool_call_id, None)
             if step_ref is not None:

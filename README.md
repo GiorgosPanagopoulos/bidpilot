@@ -24,6 +24,10 @@
 [![LangChain](https://img.shields.io/badge/LangChain-0.2-1C3C3C?style=for-the-badge)](https://python.langchain.com)
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-0.5-FF6B35?style=for-the-badge)](https://trychroma.com)
 [![MongoDB Atlas](https://img.shields.io/badge/MongoDB_Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com/atlas)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-FAB040?style=for-the-badge&logo=pre-commit&logoColor=black)](https://pre-commit.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -169,6 +173,47 @@ graph TD
 | ![APScheduler](https://img.shields.io/badge/APScheduler-3.10-808080?style=for-the-badge) | **APScheduler 3.10** | AsyncIOScheduler driving the cron-based tender ingestion pipeline |
 | ![Pydantic](https://img.shields.io/badge/Pydantic_v2-E92063?style=for-the-badge&logo=pydantic&logoColor=white) | **Pydantic v2** | Data validation and typed settings via pydantic-settings |
 | pypdf | **pypdf 4** | PDF text extraction for tender document ingestion |
+| ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black) | **React 19** | UI runtime, concurrent rendering |
+| ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) | **TypeScript 5.7** | Strict end-to-end typing |
+| ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white) | **Vite 6** | Dev server and production bundler |
+| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white) | **Tailwind CSS v4** | Utility-first styling with `@theme` custom tokens |
+| Zustand | **Zustand v5** | Lightweight state management (persist middleware for company profile) |
+| Recharts | **Recharts v2** | BarChart / AreaChart for analytics |
+| Framer Motion | **Framer Motion v11** | Page transitions and animated UI |
+| Vitest | **Vitest + React Testing Library** | Component unit tests (16 tests) |
+
+---
+
+## Frontend
+
+The `frontend/` directory is a standalone Vite + React 19 + TypeScript app that consumes the BidPilot REST API.
+
+### Running locally
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173 (proxies /api to http://localhost:8000)
+```
+
+### Views
+
+| View | Route | Description |
+|------|-------|-------------|
+| **Tender Feed** | `/` | Company profile panel, CPV/status filters, run-match button, match cards with score breakdown and eligibility badge |
+| **Bid Workspace** | `/workspace` | Tender header, doc ingestion button, animated agent-working state, cited bid draft viewer with collapsible trace panel |
+| **Analytics** | `/analytics` | Filter form (CPV, authority, date range, interval), pricing stats bar chart, supplier win rates horizontal chart, award trends area chart |
+
+### Environment
+
+```bash
+VITE_API_BASE=http://localhost:8000   # default; override in .env.local
+```
+
+### Frontend CI
+
+The `frontend` job in `.github/workflows/ci.yml` runs independently of the backend jobs:
+`npm ci` → ESLint → `tsc --noEmit` → Vitest → `vite build`
 
 ---
 
