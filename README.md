@@ -10,7 +10,7 @@
 
 <br/><br/>
 
-<img src="https://raw.githubusercontent.com/GiorgosPanagopoulos/bidpilot/main/assets/bidpilot-graphical-abstract.png" width="900" alt="BidPilot architecture" />
+<img src="https://raw.githubusercontent.com/GiorgosPanagopoulos/bidpilot/main/assets/bidpilot-graphical-abstract.png?v=2" width="900" alt="BidPilot architecture" />
 
 </div>
 
