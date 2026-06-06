@@ -387,7 +387,7 @@ bidpilot/
 - Phase 2 - Eligibility Engine + CI (Complete)
 - Phase 3 - RAG Bid Drafting (ReAct agent, requirement extraction, gap analysis, cited drafts) (Complete)
 - Phase 4 - Award Analytics (ΔΙΑΥΓΕΙΑ ingestion, pricing stats, win rates, trend series) (Complete)
-- Frontend - React 19 / TS / Vite / Tailwind v4 (Tender Feed + Bid Workspace) (Coming soon)
+- Frontend - React 19 / TS / Vite / Tailwind v4 (Tender Feed + Bid Workspace + Analytics) (Complete)
 
 ---
 

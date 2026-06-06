@@ -15,7 +15,7 @@
   <text x="78" y="56" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="30" font-weight="700" letter-spacing="-0.5">
     <tspan fill="#f5f6f8">Bid</tspan><tspan fill="url(#gold)">Pilot</tspan>
   </text>
-  <text x="79" y="80" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="15" font-weight="500" fill="#8b93a7">Supplier-side Tender Intelligence · Backend Pipeline</text>
+  <text x="79" y="80" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="15" font-weight="500" fill="#8b93a7">Supplier-side Tender Intelligence · End-to-end Pipeline</text>
 
   <!-- top-right pill -->
   <rect x="940" y="36" width="220" height="34" rx="17" fill="#161a22" stroke="#c9a84c" stroke-opacity="0.4"/>
@@ -33,18 +33,16 @@
     <line x1="1075" y1="400" x2="1075" y2="478"/>
   </g>
 
-  <!-- chevrons between nodes -->
+  <!-- chevrons between nodes — all gold -->
   <g fill="none" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.7">
     <path d="M214 317 L226 325 L214 333"/>
     <path d="M404 317 L416 325 L404 333"/>
     <path d="M594 317 L606 325 L594 333"/>
-  </g>
-  <g fill="none" stroke="#3a4150" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M784 317 L796 325 L784 333"/>
     <path d="M974 317 L986 325 L974 333"/>
   </g>
 
-  <!-- NODE 0 – SOURCES (Phase 1) -->
+  <!-- NODE 0 – SOURCES -->
   <g>
     <rect x="41" y="250" width="168" height="150" rx="16" fill="#161a22" stroke="#c9a84c" stroke-opacity="0.55"/>
     <rect x="41" y="250" width="168" height="4" rx="2" fill="url(#gold)"/>
@@ -58,7 +56,7 @@
     <text x="125" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#7c8392">public feeds</text>
   </g>
 
-  <!-- NODE 1 – INGESTION (Phase 1) -->
+  <!-- NODE 1 – INGESTION -->
   <g>
     <rect x="231" y="250" width="168" height="150" rx="16" fill="#161a22" stroke="#c9a84c" stroke-opacity="0.55"/>
     <rect x="231" y="250" width="168" height="4" rx="2" fill="url(#gold)"/>
@@ -69,7 +67,7 @@
     <text x="315" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#7c8392">APScheduler</text>
   </g>
 
-  <!-- NODE 2 – MATCHING (Phase 1) -->
+  <!-- NODE 2 – MATCHING -->
   <g>
     <rect x="421" y="250" width="168" height="150" rx="16" fill="#161a22" stroke="#c9a84c" stroke-opacity="0.55"/>
     <rect x="421" y="250" width="168" height="4" rx="2" fill="url(#gold)"/>
@@ -83,54 +81,56 @@
     <text x="505" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#7c8392">explainable</text>
   </g>
 
-  <!-- NODE 3 – ELIGIBILITY (Phase 2) -->
-  <g opacity="0.6">
-    <rect x="611" y="250" width="168" height="150" rx="16" fill="#13171f" stroke="#2a2f3a"/>
-    <circle cx="695" cy="292" r="22" fill="none" stroke="#8b93a7" stroke-opacity="0.5"/>
-    <path d="M686 292 L693 299 L705 284" stroke="#aeb4c0" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="695" y="338" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="17" font-weight="700" fill="#cdd2db">ELIGIBILITY</text>
-    <text x="695" y="360" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="13" fill="#9aa0ad">YAML · exclusions</text>
-    <text x="695" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#c9a84c">Phase 2</text>
+  <!-- NODE 3 – ELIGIBILITY -->
+  <g>
+    <rect x="611" y="250" width="168" height="150" rx="16" fill="#161a22" stroke="#c9a84c" stroke-opacity="0.55"/>
+    <rect x="611" y="250" width="168" height="4" rx="2" fill="url(#gold)"/>
+    <circle cx="695" cy="292" r="22" fill="none" stroke="#c9a84c" stroke-opacity="0.45"/>
+    <path d="M686 292 L693 299 L705 284" stroke="#c9a84c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="695" y="338" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="17" font-weight="700" fill="#e7c873">ELIGIBILITY</text>
+    <text x="695" y="360" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="13" fill="#aeb4c0">YAML · exclusions</text>
+    <text x="695" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#7c8392">hot-reload</text>
   </g>
 
-  <!-- NODE 4 – RAG DRAFTING (future) -->
-  <g opacity="0.6">
-    <rect x="801" y="250" width="168" height="150" rx="16" fill="#13171f" stroke="#2a2f3a"/>
-    <circle cx="885" cy="292" r="22" fill="none" stroke="#8b93a7" stroke-opacity="0.5"/>
-    <g stroke="#aeb4c0" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+  <!-- NODE 4 – RAG DRAFTING -->
+  <g>
+    <rect x="801" y="250" width="168" height="150" rx="16" fill="#161a22" stroke="#c9a84c" stroke-opacity="0.55"/>
+    <rect x="801" y="250" width="168" height="4" rx="2" fill="url(#gold)"/>
+    <circle cx="885" cy="292" r="22" fill="none" stroke="#c9a84c" stroke-opacity="0.45"/>
+    <g stroke="#c9a84c" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
       <path d="M876 281 H889 L895 287 V303 H876 Z"/>
       <path d="M880 291 H891"/>
       <path d="M880 296 H891"/>
     </g>
-    <text x="885" y="338" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="17" font-weight="700" fill="#cdd2db">RAG DRAFTING</text>
-    <text x="885" y="360" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="13" fill="#9aa0ad">ReAct · citations</text>
-    <text x="885" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#c9a84c">Phase 3</text>
+    <text x="885" y="338" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="17" font-weight="700" fill="#e7c873">RAG DRAFTING</text>
+    <text x="885" y="360" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="13" fill="#aeb4c0">ReAct · citations</text>
+    <text x="885" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#7c8392">cited proposals</text>
   </g>
 
-  <!-- NODE 5 – BID WORKSPACE (future) -->
-  <g opacity="0.6">
-    <rect x="991" y="250" width="168" height="150" rx="16" fill="#13171f" stroke="#2a2f3a"/>
-    <circle cx="1075" cy="292" r="22" fill="none" stroke="#8b93a7" stroke-opacity="0.5"/>
-    <g stroke="#aeb4c0" stroke-width="2" fill="none" stroke-linejoin="round">
+  <!-- NODE 5 – BID WORKSPACE -->
+  <g>
+    <rect x="991" y="250" width="168" height="150" rx="16" fill="#161a22" stroke="#c9a84c" stroke-opacity="0.55"/>
+    <rect x="991" y="250" width="168" height="4" rx="2" fill="url(#gold)"/>
+    <circle cx="1075" cy="292" r="22" fill="none" stroke="#c9a84c" stroke-opacity="0.45"/>
+    <g stroke="#c9a84c" stroke-width="2" fill="none" stroke-linejoin="round">
       <path d="M1065 282 h8 v8 h-8 Z"/>
       <path d="M1077 282 h8 v8 h-8 Z"/>
       <path d="M1065 294 h8 v8 h-8 Z"/>
       <path d="M1077 294 h8 v8 h-8 Z"/>
     </g>
-    <text x="1075" y="338" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="16" font-weight="700" fill="#cdd2db">BID WORKSPACE</text>
-    <text x="1075" y="360" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="13" fill="#9aa0ad">feed · drafts</text>
-    <text x="1075" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#c9a84c">Phase 3–4</text>
+    <text x="1075" y="338" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="16" font-weight="700" fill="#e7c873">BID WORKSPACE</text>
+    <text x="1075" y="360" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="13" fill="#aeb4c0">feed · drafts</text>
+    <text x="1075" y="380" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" fill="#7c8392">React 19 · TS</text>
   </g>
 
-  <!-- PHASE 1 bracket -->
-  <path d="M41 412 V422 H589 V412" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-opacity="0.7"/>
-  <text x="315" y="440" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="13" font-weight="600" fill="#c9a84c" letter-spacing="0.5">PHASE 1 · Ingestion + Match MVP</text>
+  <!-- full-width pipeline caption -->
+  <text x="600" y="432" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="12" font-weight="500" fill="#c9a84c" fill-opacity="0.6" letter-spacing="0.8">End-to-end tender intelligence pipeline</text>
 
   <!-- foundation bar -->
-  <rect x="41" y="478" width="1118" height="58" rx="14" fill="#12161d" stroke="#2a2f3a"/>
-  <text x="64" y="513" font-family="'Inter',Arial,sans-serif" font-size="12" font-weight="700" fill="#c9a84c" letter-spacing="1">FOUNDATION</text>
-  <text x="600" y="513" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="15" fill="#aeb4c0">MongoDB Atlas  ·  ChromaDB Vector Store  ·  Audit Log (fire-and-forget)</text>
+  <rect x="41" y="450" width="1118" height="58" rx="14" fill="#12161d" stroke="#2a2f3a"/>
+  <text x="64" y="485" font-family="'Inter',Arial,sans-serif" font-size="12" font-weight="700" fill="#c9a84c" letter-spacing="1">FOUNDATION</text>
+  <text x="600" y="485" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="15" fill="#aeb4c0">MongoDB Atlas  ·  ChromaDB Vector Store  ·  Audit Log (fire-and-forget)</text>
 
   <!-- footer motto -->
-  <text x="600" y="584" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="14" font-style="italic" fill="#8b7a45">"I build things I'd trust with something that matters."</text>
+  <text x="600" y="546" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-size="14" font-style="italic" fill="#8b7a45">"I build things I'd trust with something that matters."</text>
 </svg>
