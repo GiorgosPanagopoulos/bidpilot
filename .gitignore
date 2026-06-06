@@ -15,3 +15,5 @@ chroma_data/
 *.log
 .DS_Store
 .secrets.baseline
+node_modules/
+frontend/dist/
