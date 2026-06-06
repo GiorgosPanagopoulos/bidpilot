@@ -33,7 +33,7 @@
 
 ## Overview
 
-BidPilot is a supplier-side tender intelligence backend. It ingests public tenders from TED (Tenders Electronic Daily), matches them to a company profile via a two-stage hybrid engine (semantic retrieval followed by explainable rule re-ranking), screens each match through a declarative eligibility engine, and -- in Phase 3 -- runs a ReAct agent that reads the tender document (PDF), extracts structured requirements, analyses capability gaps, and drafts a cited technical proposal section by section. All draft output is marked `needs_review`: the API enforces a mandatory human-review gate and provides no auto-submit path.
+BidPilot is a supplier-side tender intelligence backend. It ingests public tenders from TED (Tenders Electronic Daily), matches them to a company profile via a two-stage hybrid engine (semantic retrieval followed by explainable rule re-ranking), screens each match through a declarative eligibility engine, and runs a ReAct agent that reads the tender document (PDF), extracts structured requirements, analyses capability gaps, and drafts a cited technical proposal section by section. Phase 4 adds a second ingestion source (ΔΙΑΥΓΕΙΑ public contract awards) and an analytics layer: historical pricing per CPV, supplier win rates, and award trends. All draft output is marked `needs_review`: the API enforces a mandatory human-review gate and provides no auto-submit path.
 
 Built on the same production architecture as ProcureAI: ContextVar multi-tenancy via the `X-Company-Id` header, custom exceptions with a global FastAPI handler, fire-and-forget Mongo audit logging, file-based versioned prompts with hot-reload via the `PromptLoader` singleton, and full CI (ruff, mypy, pytest).
 
@@ -62,7 +62,12 @@ Built on the same production architecture as ProcureAI: ContextVar multi-tenancy
 | Fire-and-Forget Audit Log | Non-blocking `asyncio.ensure_future` writes every company, tender, match, and draft event to `audit_log` |
 | Custom Exception Layer | Typed hierarchy with a single global FastAPI handler |
 | APScheduler Cron | Daily auto-ingestion at 06:00 UTC (configurable via `INGEST_CRON`), also triggerable on-demand |
-| CI Pipeline | GitHub Actions: ruff lint, mypy type-check, pytest (29 tests), gated on pushes and PRs to `main` |
+| Award Ingestion | Async `DiavgeiaSource` fetches contract-award decisions from the ΔΙΑΥΓΕΙΑ opendata API; normalises to a canonical `Award` model; `KimdisSource` stub raises `SourceUnavailableError` as a documented placeholder |
+| Scheduled Award Sync | APScheduler runs `ingest_awards_pipeline` on the same cron as tender ingestion; also triggerable via `POST /awards/ingest` |
+| Pricing Analytics | `compute_pricing_stats` returns min, max, mean, median, p25, p75 over `award_value` for any CPV/date scope; chart-ready JSON for Recharts |
+| Supplier Win Rates | `compute_win_rates` aggregates awards per supplier, computes `win_share` against total scope, ranks by `awards_won`; supports `top_n` cap |
+| Award Trends | `compute_trends` buckets awards by month, quarter, or year; returns `TrendSeries` with count, total, and mean per period |
+| CI Pipeline | GitHub Actions: ruff lint, mypy type-check, pytest, gated on pushes and PRs to `main` |
 
 ---
 
@@ -72,11 +77,13 @@ Built on the same production architecture as ProcureAI: ContextVar multi-tenancy
 graph TD
     subgraph Sources
         TED["TED eForms API v3"]
+        DIAVGEIA["ΔΙΑΥΓΕΙΑ opendata API\naward/contract decisions"]
     end
 
     subgraph Ingestion
         SCHED["APScheduler\ncron: 06:00 UTC"]
         PIPE["ingest_pipeline\nfetch + normalize + embed"]
+        AWARDS_PIPE["ingest_awards_pipeline\nfetch + normalize + upsert"]
         DOCPIPE["POST /tenders/{id}/ingest-doc\nfetch PDF + pypdf + chunk + embed"]
     end
 
@@ -93,21 +100,29 @@ graph TD
 
     subgraph DraftingAgent["ReAct Drafting Agent"]
         TOOLS["Tools\nextract_requirements\nanalyze_gaps\nretrieve_clauses\ndraft_section\nself_check"]
-        REACT["create_react_agent\nAgentExecutor\nreturn_intermediate_steps"]
+        REACT["create_react_agent\nLangGraph prebuilt"]
         DRAFT["BidDraft\nstatus=needs_review"]
     end
 
+    subgraph Analytics["Analytics Service (pure)"]
+        PRICING["compute_pricing_stats\nmin/max/mean/median/p25/p75"]
+        WINRATE["compute_win_rates\nawards_won + win_share"]
+        TRENDS["compute_trends\nmonth/quarter/year buckets"]
+    end
+
     subgraph Persistence
-        MONGO[("MongoDB Atlas\ncompanies, tenders\nmatches, bid_drafts\naudit_log")]
+        MONGO[("MongoDB Atlas\ncompanies, tenders\nmatches, bid_drafts\nawards, audit_log")]
     end
 
     TED -->|async fetch| PIPE
+    DIAVGEIA -->|async fetch| AWARDS_PIPE
     SCHED -->|triggers| PIPE
+    SCHED -->|triggers| AWARDS_PIPE
     PIPE -->|upsert_tender_embedding| CHROMA
     PIPE -->|upsert_tender| MONGO
+    AWARDS_PIPE -->|upsert_award| MONGO
 
     DOCPIPE -->|upsert_chunks| TDOCS
-    DOCPIPE -->|raw_doc_uri| TED
 
     PROFILE["CompanyProfile\nCPV, NUTS, turnover, tags"] -->|build_query| SEM
     SEM -->|cosine distance| CHROMA
@@ -121,11 +136,19 @@ graph TD
     REACT --> DRAFT
     DRAFT -->|upsert_draft| MONGO
 
-    ROUTERS["FastAPI Routers\n/companies /tenders /matches /drafts"] --> PIPE
+    MONGO -->|list_awards| PRICING
+    MONGO -->|list_awards| WINRATE
+    MONGO -->|list_awards| TRENDS
+
+    ROUTERS["FastAPI Routers\n/companies /tenders /matches\n/drafts /awards /analytics"] --> PIPE
+    ROUTERS --> AWARDS_PIPE
     ROUTERS --> PROFILE
     ROUTERS --> REACT
     RESULT --> ROUTERS
     DRAFT --> ROUTERS
+    PRICING --> ROUTERS
+    WINRATE --> ROUTERS
+    TRENDS --> ROUTERS
 
     CTX["ContextVar Tenant\nX-Company-Id header"] -.->|cross-cutting| ROUTERS
     AUDIT["fire-and-forget\nAudit Log"] -.->|audit_log collection| MONGO
@@ -211,6 +234,11 @@ uvicorn app.main:app --reload
 | `POST` | `/drafts/run` | Body `{company_id, tender_id}`: run the ReAct drafting agent and return a `BidDraft` (status `needs_review`, HTTP 201) |
 | `GET` | `/drafts/{id}` | Retrieve a stored `BidDraft` by ID (tenant-scoped) |
 | `GET` | `/drafts/{id}/trace` | Retrieve the ReAct reasoning trace (thought/action/observation steps) |
+| `POST` | `/awards/ingest` | Manually trigger a ΔΙΑΥΓΕΙΑ award ingestion run; returns `{"ingested": N}` (HTTP 202) |
+| `GET` | `/awards` | List persisted awards, filterable by `cpv`, `authority`, `supplier`, `supplier_vat`, `from`, `to` |
+| `GET` | `/analytics/pricing` | Pricing stats (min/max/mean/median/p25/p75) for awards matching `cpv`, `from`, `to` |
+| `GET` | `/analytics/win-rates` | Supplier win rates ranked by `awards_won`; supports `cpv`, `authority`, `from`, `to`, `top_n` |
+| `GET` | `/analytics/trends` | Award trend series bucketed by `interval` (month/quarter/year); supports `cpv`, `authority`, `from`, `to` |
 | `GET` | `/health` | Liveness probe |
 
 All endpoints accept the optional `X-Company-Id` header for multi-tenant context propagation. Draft endpoints enforce that the result requires mandatory human review before any submission.
@@ -240,24 +268,30 @@ bidpilot/
 │   ├── api/
 │   │   ├── deps.py             # set_tenant dependency
 │   │   └── routers/
+│   │       ├── analytics.py    # GET /analytics/pricing, /win-rates, /trends
+│   │       ├── awards.py       # POST /awards/ingest, GET /awards
 │   │       ├── companies.py
 │   │       ├── drafts.py       # POST /drafts/run, GET /drafts/{id}, GET /drafts/{id}/trace
 │   │       ├── matches.py
 │   │       └── tenders.py      # POST /tenders/ingest, GET /tenders, POST /tenders/{id}/ingest-doc
 │   ├── core/
 │   │   ├── context.py
-│   │   ├── exceptions.py       # + DocumentParsingError, RequirementExtractionError, DraftingError
+│   │   ├── exceptions.py       # + DocumentParsingError, RequirementExtractionError,
+│   │   │                       #   DraftingError, AwardIngestionError
 │   │   ├── logging.py
 │   │   └── settings.py         # + agent_model (AGENT_MODEL env var)
 │   ├── ingestion/
 │   │   ├── base.py
+│   │   ├── diavgeia.py         # DiavgeiaSource (ΔΙΑΥΓΕΙΑ opendata) + KimdisSource stub
 │   │   ├── doc_parser.py       # parse_pdf_to_chunks: pypdf extraction + paragraph chunking
 │   │   ├── ted.py
-│   │   └── scheduler.py
+│   │   └── scheduler.py        # + ingest_awards_pipeline, awards cron job
 │   ├── matching/
 │   │   ├── eligibility.py
 │   │   └── matcher.py
 │   ├── models/
+│   │   ├── award.py            # RawAward, Award, PricingStats, SupplierWinRate,
+│   │   │                       #   TrendPoint, TrendSeries
 │   │   ├── company.py
 │   │   ├── draft.py            # ProposalCitation, RequirementItem, RequirementChecklist,
 │   │   │                       #   GapItem, GapReport, BidDraftSection, BidDraft
@@ -265,11 +299,14 @@ bidpilot/
 │   │   └── tender.py
 │   ├── repositories/
 │   │   ├── audit.py
+│   │   ├── awards.py           # upsert_award, list_awards (cpv/authority/supplier/date filters)
 │   │   ├── companies.py
 │   │   ├── drafts.py           # upsert_draft, get_draft, save_trace, get_trace
 │   │   ├── matches.py
 │   │   ├── mongo.py
 │   │   └── tenders.py          # + get_tender
+│   ├── services/
+│   │   └── analytics.py        # compute_pricing_stats, compute_win_rates, compute_trends
 │   └── vectorstore/
 │       ├── chroma.py           # tenders corpus
 │       └── tender_docs.py      # tender_docs corpus: upsert_chunks, query_tender_docs,
@@ -278,14 +315,19 @@ bidpilot/
 │   └── eligibility_rules.yaml
 ├── tests/
 │   ├── conftest.py
+│   ├── test_diavgeia_normalize.py
 │   ├── test_doc_ingest.py
 │   ├── test_draft_pipeline.py
 │   ├── test_eligibility.py
 │   ├── test_gap_analysis.py
+│   ├── test_ingest_audit.py
 │   ├── test_matcher.py
+│   ├── test_pricing_stats.py
 │   ├── test_requirement_extraction.py
 │   ├── test_self_check.py
-│   └── test_ted_normalize.py
+│   ├── test_ted_normalize.py
+│   ├── test_trends_monthly.py
+│   └── test_win_rates.py
 ├── .env.example
 ├── .github/workflows/ci.yml
 ├── .pre-commit-config.yaml
@@ -299,8 +341,8 @@ bidpilot/
 - Phase 1 - Ingestion + Hybrid Match MVP (Complete)
 - Phase 2 - Eligibility Engine + CI (Complete)
 - Phase 3 - RAG Bid Drafting (ReAct agent, requirement extraction, gap analysis, cited drafts) (Complete)
-- Phase 4 - Award Analytics (ΔΙΑΥΓΕΙΑ/ΚΗΜΔΗΣ award data, historical pricing, win rates, dashboard)
-- Frontend - React 19 / TS / Vite / Tailwind v4 (Tender Feed + Bid Workspace)
+- Phase 4 - Award Analytics (ΔΙΑΥΓΕΙΑ ingestion, pricing stats, win rates, trend series) (Complete)
+- Frontend - React 19 / TS / Vite / Tailwind v4 (Tender Feed + Bid Workspace) (Coming soon)
 
 ---
 

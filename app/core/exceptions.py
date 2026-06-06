@@ -51,5 +51,10 @@ class DraftingError(BidPilotError):
     detail = "bid drafting failed"
 
 
+class AwardIngestionError(BidPilotError):
+    status_code = 500
+    detail = "award ingestion failed"
+
+
 async def bidpilot_exception_handler(request: Request, exc: BidPilotError) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})

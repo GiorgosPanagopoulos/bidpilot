@@ -6,7 +6,9 @@ from datetime import UTC, datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.core.settings import settings
+from app.ingestion.diavgeia import DiavgeiaSource
 from app.ingestion.ted import TEDSource
+from app.repositories.awards import upsert_award
 from app.repositories.tenders import upsert_tender
 from app.vectorstore.chroma import upsert_tender_embedding
 
@@ -33,6 +35,23 @@ async def ingest_pipeline(since: datetime | None = None) -> int:
     return count
 
 
+async def ingest_awards_pipeline(since: datetime | None = None) -> int:
+    if since is None:
+        since = datetime.now(UTC) - timedelta(days=1)
+    source = DiavgeiaSource()
+    raw_list = await source.fetch(since)
+    count = 0
+    for raw in raw_list:
+        try:
+            award = source.normalize(raw)
+            await upsert_award(award)
+            count += 1
+        except Exception as exc:
+            logger.warning("skipping award record: %s", exc)
+    logger.info("ingested %d awards", count)
+    return count
+
+
 def start_scheduler() -> None:
     global _scheduler
     if _scheduler is not None:
@@ -49,6 +68,16 @@ def start_scheduler() -> None:
         month=month,
         day_of_week=day_of_week,
         id="ingest_tenders",
+    )
+    _scheduler.add_job(
+        ingest_awards_pipeline,
+        "cron",
+        minute=minute,
+        hour=hour,
+        day=day,
+        month=month,
+        day_of_week=day_of_week,
+        id="ingest_awards",
     )
     _scheduler.start()
     logger.info("scheduler started with cron=%s", settings.ingest_cron)

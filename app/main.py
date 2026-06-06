@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routers import companies, drafts, matches, tenders
+from app.api.routers import analytics, awards, companies, drafts, matches, tenders
 from app.core.exceptions import BidPilotError, bidpilot_exception_handler
 from app.core.logging import configure_logging
 from app.ingestion.scheduler import start_scheduler, stop_scheduler
@@ -26,6 +26,8 @@ app.include_router(companies.router)
 app.include_router(tenders.router)
 app.include_router(matches.router)
 app.include_router(drafts.router)
+app.include_router(awards.router)
+app.include_router(analytics.router)
 
 
 @app.get("/health")
