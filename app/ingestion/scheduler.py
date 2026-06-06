@@ -52,6 +52,32 @@ async def ingest_awards_pipeline(since: datetime | None = None) -> int:
     return count
 
 
+async def _run_tenders_job() -> None:
+    """APScheduler entry-point for tender ingestion. Exceptions are logged, never re-raised."""
+    try:
+        count = await ingest_pipeline()
+        logger.info("scheduled tender ingestion completed: %d records", count)
+    except Exception as exc:
+        logger.error(
+            "scheduled tender ingestion failed: %s: %s",
+            type(exc).__name__,
+            exc,
+        )
+
+
+async def _run_awards_job() -> None:
+    """APScheduler entry-point for award ingestion. Exceptions are logged, never re-raised."""
+    try:
+        count = await ingest_awards_pipeline()
+        logger.info("scheduled award ingestion completed: %d records", count)
+    except Exception as exc:
+        logger.error(
+            "scheduled award ingestion failed: %s: %s",
+            type(exc).__name__,
+            exc,
+        )
+
+
 def start_scheduler() -> None:
     global _scheduler
     if _scheduler is not None:
@@ -60,7 +86,7 @@ def start_scheduler() -> None:
     cron_parts = settings.ingest_cron.split()
     minute, hour, day, month, day_of_week = cron_parts
     _scheduler.add_job(
-        ingest_pipeline,
+        _run_tenders_job,
         "cron",
         minute=minute,
         hour=hour,
@@ -70,7 +96,7 @@ def start_scheduler() -> None:
         id="ingest_tenders",
     )
     _scheduler.add_job(
-        ingest_awards_pipeline,
+        _run_awards_job,
         "cron",
         minute=minute,
         hour=hour,
