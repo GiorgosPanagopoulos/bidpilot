@@ -1,0 +1,30 @@
+Extract all procurement requirements from the tender document chunks below.
+
+For each requirement identify:
+- id: a short unique identifier, e.g. "req-001"
+- category: one of "technical", "financial", "legal", "administrative", "submission"
+- text: the specific requirement text (concise, in English)
+- mandatory: true if the requirement is essential/obligatory, false if preferred or optional
+- citation: the locator (section/article heading or page reference) and a short representative snippet
+
+Respond with a JSON object that exactly matches this structure (no markdown, no commentary):
+{{
+  "items": [
+    {{
+      "id": "req-001",
+      "category": "technical",
+      "text": "Requirement description",
+      "mandatory": true,
+      "citation": {{
+        "tender_id": "{tender_id}",
+        "locator": "Article 5",
+        "snippet": "relevant excerpt from the tender text"
+      }}
+    }}
+  ]
+}}
+
+Tender ID: {tender_id}
+
+Tender document chunks:
+{chunks}

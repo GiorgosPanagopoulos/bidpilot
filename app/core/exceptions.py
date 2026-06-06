@@ -36,5 +36,20 @@ class MatchingError(BidPilotError):
     detail = "matching pipeline failed"
 
 
+class DocumentParsingError(BidPilotError):
+    status_code = 500
+    detail = "document parsing failed"
+
+
+class RequirementExtractionError(BidPilotError):
+    status_code = 500
+    detail = "requirement extraction failed"
+
+
+class DraftingError(BidPilotError):
+    status_code = 500
+    detail = "bid drafting failed"
+
+
 async def bidpilot_exception_handler(request: Request, exc: BidPilotError) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})

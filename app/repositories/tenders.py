@@ -4,6 +4,14 @@ from app.repositories.mongo import get_db
 COLLECTION = "tenders"
 
 
+async def get_tender(tender_id: str) -> Tender | None:
+    doc = await get_db()[COLLECTION].find_one({"_id": tender_id})
+    if doc is None:
+        return None
+    doc["id"] = doc.pop("_id")
+    return Tender(**doc)
+
+
 async def upsert_tender(tender: Tender) -> Tender:
     doc = tender.model_dump()
     doc["_id"] = doc.pop("id")

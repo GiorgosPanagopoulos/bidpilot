@@ -22,5 +22,8 @@ class Settings(BaseSettings):
 
     log_level: str = Field("INFO", alias="LOG_LEVEL")
 
+    # drafting agent
+    agent_model: str = Field("claude-sonnet-4-6", alias="AGENT_MODEL")
+
 
 settings = Settings()

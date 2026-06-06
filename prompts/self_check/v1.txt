@@ -1,0 +1,21 @@
+Review the following draft section and verify that it addresses all listed mandatory requirements.
+
+Draft section content:
+{section_content}
+
+Mandatory requirements to verify:
+{mandatory_requirements}
+
+For each mandatory requirement determine whether the section:
+- "covered": directly and explicitly addresses the requirement
+- "partial": partially addresses the requirement but lacks detail or evidence
+- "missing": does not address the requirement at all
+
+Respond with a JSON object that exactly matches this structure (no markdown, no commentary):
+{{
+  "status": "ok",
+  "missing_requirement_ids": [],
+  "notes": "All mandatory requirements are addressed."
+}}
+
+Use status "ok" if missing_requirement_ids is empty, otherwise use "gaps".

@@ -1,0 +1,28 @@
+Draft a section of a technical proposal for the procurement tender described below.
+
+Section title: {section_title}
+
+Requirements to cover:
+{requirements}
+
+Retrieved tender clauses:
+{clauses}
+
+Company capabilities:
+{company_capabilities}
+
+Instructions:
+- Write a professional, concise section in formal language.
+- Every factual claim must cite a specific tender clause using [Locator] notation inline.
+- Do not fabricate tender requirements or company capabilities not listed above.
+- If a requirement cannot be fully addressed based on the available information, state it clearly.
+
+Respond with a JSON object that exactly matches this structure (no markdown, no commentary):
+{{
+  "title": "{section_title}",
+  "content": "The drafted section text with inline [Locator] citations.",
+  "citations": [
+    {{"tender_id": "TENDER_ID", "locator": "Article 5", "snippet": "relevant excerpt"}}
+  ],
+  "covers_requirements": ["req-001", "req-002"]
+}}

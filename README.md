@@ -6,7 +6,7 @@
 
 <strong>AI-Native Tender Intelligence for Suppliers</strong>
 
-<em>Semantic matching, eligibility screening and bid intelligence over public tenders</em>
+<em>Semantic matching, eligibility screening and cited bid drafting over public tenders</em>
 
 <br/><br/>
 
@@ -33,83 +33,40 @@
 
 ## Overview
 
-BidPilot is a supplier-side tender intelligence backend. It ingests public tenders from TED (Tenders Electronic Daily), with ΚΗΜΔΗΣ and ΕΣΗΔΗΣ as planned sources, matches them to a company profile via a two-stage hybrid engine (semantic retrieval followed by explainable rule re-ranking), and screens each match through a declarative eligibility engine covering financial capacity, minimum lead days, exclusion flag overlap, and technical coverage. Built on the same production architecture as ProcureAI: ContextVar multi-tenancy via the `X-Company-Id` header, custom exceptions with a global FastAPI handler, fire-and-forget Mongo audit logging, file-based rules config with hot-reload, and full CI (ruff, mypy, pytest). The test suite covers **24 tests** across ingestion normalisation, hybrid scoring, and eligibility screening.
+BidPilot is a supplier-side tender intelligence backend. It ingests public tenders from TED (Tenders Electronic Daily), matches them to a company profile via a two-stage hybrid engine (semantic retrieval followed by explainable rule re-ranking), screens each match through a declarative eligibility engine, and -- in Phase 3 -- runs a ReAct agent that reads the tender document (PDF), extracts structured requirements, analyses capability gaps, and drafts a cited technical proposal section by section. All draft output is marked `needs_review`: the API enforces a mandatory human-review gate and provides no auto-submit path.
+
+Built on the same production architecture as ProcureAI: ContextVar multi-tenancy via the `X-Company-Id` header, custom exceptions with a global FastAPI handler, fire-and-forget Mongo audit logging, file-based versioned prompts with hot-reload via the `PromptLoader` singleton, and full CI (ruff, mypy, pytest).
 
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| 📥 **Tender Ingestion** | Fetches and normalises TED eForms API v3 notices into a canonical `Tender` model with CPV codes, NUTS regions, budget, and deadline |
-| 🔌 **TED Connector** | Async `TEDSource` with configurable base URL, date-range fetch, and typed normalisation with graceful fallbacks for missing fields |
-| 🗂️ **Shared Vector Corpus** | ChromaDB persistent store holds all ingested tenders; every company profile queries against the single shared corpus |
-| 🔍 **Hybrid Matcher** | Two-stage pipeline: semantic cosine-distance retrieval (top-k) followed by rule re-ranking on CPV ratio, NUTS match, and budget feasibility |
-| 💡 **Explainable Reasons** | Every `MatchResult` carries a `reasons[]` list so no match is silently promoted or dropped without a human-readable justification |
-| ⚖️ **Declarative Eligibility Engine** | YAML-driven `EligibilityEngine` enforces financial capacity (hard), minimum lead days (hard), exclusion flag overlap (hard), and technical coverage (soft warning) |
-| 🔄 **Hot-Reload Rules** | `EligibilityEngine.reload()` re-reads `config/eligibility_rules.yaml` at runtime; compliance updates take effect without a server restart |
-| 🏢 **Multi-Tenancy** | `X-Company-Id` header propagated to a Python `ContextVar`; all Mongo writes and audit events carry the tenant identity |
-| 📝 **Fire-and-Forget Audit Log** | Non-blocking `asyncio.ensure_future` writes every company, tender, and match event to a dedicated `audit_log` collection in MongoDB |
-| 🚨 **Custom Exception Layer** | Typed hierarchy (`BidPilotError`, `NotFoundError`, `TenderIngestionError`, `SourceUnavailableError`, `MatchingError`) with a single global FastAPI handler |
-| ⏰ **APScheduler Cron** | Daily auto-ingestion at 06:00 UTC (configurable via `INGEST_CRON`), also triggerable on-demand via `POST /tenders/ingest` |
-| ✅ **CI Pipeline** | GitHub Actions: ruff lint, mypy type-check, pytest (24 tests), gated on pushes and PRs to `main` |
+| Tender Ingestion | Fetches and normalises TED eForms API v3 notices into a canonical `Tender` model with CPV codes, NUTS regions, budget, and deadline |
+| TED Connector | Async `TEDSource` with configurable base URL, date-range fetch, and typed normalisation with graceful fallbacks |
+| Shared Vector Corpus | ChromaDB persistent store holds all ingested tenders; every company profile queries against the single shared corpus |
+| Hybrid Matcher | Two-stage pipeline: semantic cosine-distance retrieval (top-k) followed by rule re-ranking on CPV ratio, NUTS match, and budget feasibility |
+| Explainable Reasons | Every `MatchResult` carries a `reasons[]` list so no match is silently promoted or dropped |
+| Declarative Eligibility Engine | YAML-driven `EligibilityEngine` enforces financial capacity (hard), minimum lead days (hard), exclusion flag overlap (hard), and technical coverage (soft warning) |
+| Hot-Reload Rules | `EligibilityEngine.reload()` re-reads `config/eligibility_rules.yaml` at runtime without a server restart |
+| RAG Bid Drafting | ReAct agent (LangChain `create_react_agent` + `AgentExecutor`) reads an ingested tender PDF, extracts a structured `RequirementChecklist`, runs a `GapReport`, then drafts cited `BidDraftSection` objects via five specialised tools |
+| Requirement Extraction | LLM-powered structured extraction of technical, financial, legal, administrative, and submission requirements, each with a `ProposalCitation` (locator + snippet) |
+| Gap Analysis | Pure-logic matching of `RequirementChecklist` against `CompanyProfile` (capacity tags, turnover, exclusion flags); produces `GapReport` with `met/partial/unmet` per item and an overall `coverage_ratio` |
+| Cited Proposal Sections | `draft_section` tool retrieves tender clauses and grounded company capabilities, then drafts prose with inline `[Locator]` citations; fabricated requirements are not permitted |
+| Self-Check | `self_check` tool validates each drafted section against mandatory requirements and reports missing coverage |
+| Human-in-the-Loop | `BidDraft.status` is always `needs_review`; the API response includes a mandatory-review notice; no auto-submit path exists |
+| File-Based Versioned Prompts | `PromptLoader` singleton reads `prompts/{name}/{version}.txt` fresh on every call (hot-reloadable); used for all LLM instructions |
+| Token and Cost Tracking | `TokenCostCallback` accumulates input/output tokens per agent run; `TokenUsage.cost_usd` computes cost from a per-model rate table |
+| Multi-Tenancy | `X-Company-Id` header propagated to a Python `ContextVar`; all Mongo writes and audit events carry tenant identity |
+| Fire-and-Forget Audit Log | Non-blocking `asyncio.ensure_future` writes every company, tender, match, and draft event to `audit_log` |
+| Custom Exception Layer | Typed hierarchy with a single global FastAPI handler |
+| APScheduler Cron | Daily auto-ingestion at 06:00 UTC (configurable via `INGEST_CRON`), also triggerable on-demand |
+| CI Pipeline | GitHub Actions: ruff lint, mypy type-check, pytest (29 tests), gated on pushes and PRs to `main` |
 
 ---
 
-## 💬 Example
-
-`POST /matches/run?company_id=comp-001` for an Attica-based civil engineering firm (CPV: `45000000`, `72000000`; NUTS: `EL30`; annual turnover: EUR 5,000,000):
-
-```json
-[
-  {
-    "tender_id": "ted-12345678",
-    "company_id": "comp-001",
-    "score": 0.847,
-    "semantic_score": 0.91,
-    "rule_score": 0.75,
-    "reasons": [
-      "CPV overlap 2 code(s) (100%)",
-      "NUTS region match",
-      "budget within capacity"
-    ],
-    "eligibility": {
-      "passed": true,
-      "failed_criteria": [],
-      "warnings": [],
-      "rule_version": "1.0.0"
-    }
-  },
-  {
-    "tender_id": "ted-87654321",
-    "company_id": "comp-001",
-    "score": 0.421,
-    "semantic_score": 0.64,
-    "rule_score": 0.30,
-    "reasons": [
-      "CPV overlap 1 code(s) (50%)",
-      "budget within capacity"
-    ],
-    "eligibility": {
-      "passed": false,
-      "failed_criteria": [
-        "annual turnover 500000 below required 3200000"
-      ],
-      "warnings": [
-        "no NUTS region overlap",
-        "technical coverage 33% below 50% threshold"
-      ],
-      "rule_version": "1.0.0"
-    }
-  }
-]
-```
-
-The first tender (CPV: `45000000-7, 45233000-9`, NUTS: `EL30`, budget: EUR 3,500,000) passes all eligibility criteria and ranks at the top. The second (NUTS: `EL61`, budget: EUR 3,200,000) fails the financial capacity check and is sorted to the bottom of the result list, with warnings retained for transparency.
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -120,10 +77,12 @@ graph TD
     subgraph Ingestion
         SCHED["APScheduler\ncron: 06:00 UTC"]
         PIPE["ingest_pipeline\nfetch + normalize + embed"]
+        DOCPIPE["POST /tenders/{id}/ingest-doc\nfetch PDF + pypdf + chunk + embed"]
     end
 
     subgraph VectorStore
-        CHROMA[("ChromaDB\nShared Corpus")]
+        CHROMA[("ChromaDB\nShared Corpus\ntenders collection")]
+        TDOCS[("ChromaDB\nShared Corpus\ntender_docs collection")]
     end
 
     subgraph HybridMatcher["Hybrid Matcher"]
@@ -132,14 +91,23 @@ graph TD
         ELIG["EligibilityEngine\nfinancial, deadline\nexclusion, technical"]
     end
 
+    subgraph DraftingAgent["ReAct Drafting Agent"]
+        TOOLS["Tools\nextract_requirements\nanalyze_gaps\nretrieve_clauses\ndraft_section\nself_check"]
+        REACT["create_react_agent\nAgentExecutor\nreturn_intermediate_steps"]
+        DRAFT["BidDraft\nstatus=needs_review"]
+    end
+
     subgraph Persistence
-        MONGO[("MongoDB Atlas\ncompanies, tenders\nmatches, audit_log")]
+        MONGO[("MongoDB Atlas\ncompanies, tenders\nmatches, bid_drafts\naudit_log")]
     end
 
     TED -->|async fetch| PIPE
     SCHED -->|triggers| PIPE
     PIPE -->|upsert_tender_embedding| CHROMA
     PIPE -->|upsert_tender| MONGO
+
+    DOCPIPE -->|upsert_chunks| TDOCS
+    DOCPIPE -->|raw_doc_uri| TED
 
     PROFILE["CompanyProfile\nCPV, NUTS, turnover, tags"] -->|build_query| SEM
     SEM -->|cosine distance| CHROMA
@@ -148,9 +116,16 @@ graph TD
     ELIG --> RESULT["MatchResult\nscore + reasons + eligibility"]
     RESULT -->|upsert_match| MONGO
 
-    ROUTERS["FastAPI Routers\n/companies /tenders /matches"] --> PIPE
+    TDOCS -->|RAG retrieval| TOOLS
+    TOOLS --> REACT
+    REACT --> DRAFT
+    DRAFT -->|upsert_draft| MONGO
+
+    ROUTERS["FastAPI Routers\n/companies /tenders /matches /drafts"] --> PIPE
     ROUTERS --> PROFILE
+    ROUTERS --> REACT
     RESULT --> ROUTERS
+    DRAFT --> ROUTERS
 
     CTX["ContextVar Tenant\nX-Company-Id header"] -.->|cross-cutting| ROUTERS
     AUDIT["fire-and-forget\nAudit Log"] -.->|audit_log collection| MONGO
@@ -158,22 +133,23 @@ graph TD
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Badge | Component | Role |
 |-------|-----------|------|
 | ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) | **Python 3.12** | Runtime, async/await throughout |
 | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white) | **FastAPI 0.111** | REST API, dependency injection, lifespan hooks, global exception handler |
-| ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge) | **LangChain + langchain-anthropic** | Embedding pipeline; sentence-transformers in Phase 1, Voyage-3 planned for Phase 3 |
-| ![Anthropic](https://img.shields.io/badge/Anthropic_Claude-D97757?style=for-the-badge) | **Anthropic Claude** | LLM layer wired up for Phase 3 RAG bid drafting |
-| ![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B35?style=for-the-badge) | **ChromaDB 0.5** | Persistent local vector store for the shared tender corpus |
-| ![MongoDB](https://img.shields.io/badge/MongoDB_Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white) | **MongoDB Atlas + Motor 3** | Async document persistence: companies, tenders, matches, audit log |
+| ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge) | **LangChain + langchain-anthropic** | ReAct agent (`create_react_agent`), tool definitions, chat model interface |
+| ![Anthropic](https://img.shields.io/badge/Anthropic_Claude-D97757?style=for-the-badge) | **Anthropic Claude** | LLM for requirement extraction, section drafting, and self-check (model configurable via `AGENT_MODEL`) |
+| ![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B35?style=for-the-badge) | **ChromaDB 0.5** | Persistent local vector store: `tenders` corpus for matching, `tender_docs` corpus for RAG drafting |
+| ![MongoDB](https://img.shields.io/badge/MongoDB_Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white) | **MongoDB Atlas + Motor 3** | Async document persistence: companies, tenders, matches, bid_drafts, audit log |
 | ![APScheduler](https://img.shields.io/badge/APScheduler-3.10-808080?style=for-the-badge) | **APScheduler 3.10** | AsyncIOScheduler driving the cron-based tender ingestion pipeline |
 | ![Pydantic](https://img.shields.io/badge/Pydantic_v2-E92063?style=for-the-badge&logo=pydantic&logoColor=white) | **Pydantic v2** | Data validation and typed settings via pydantic-settings |
+| pypdf | **pypdf 4** | PDF text extraction for tender document ingestion |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # 1. Clone
@@ -200,128 +176,146 @@ uvicorn app.main:app --reload
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable | Description | Required | Default |
 |----------|-------------|:--------:|---------|
-| `ANTHROPIC_API_KEY` | Anthropic API key for Claude LLM and embeddings | **Yes** | |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude LLM | **Yes** | |
 | `MONGODB_URI` | MongoDB Atlas connection string | **Yes** | |
 | `MONGO_DB_NAME` | MongoDB database name | No | `bidpilot` |
 | `CHROMA_PATH` | File system path for ChromaDB persistence | No | `./chroma_data` |
 | `TED_API_BASE` | TED eForms API v3 base URL | No | `https://api.ted.europa.eu/v3` |
-| `WEIGHT_SEMANTIC` | Semantic score weight in final match score (must sum to 1.0 with `WEIGHT_RULE`) | No | `0.6` |
+| `WEIGHT_SEMANTIC` | Semantic score weight in final match score | No | `0.6` |
 | `WEIGHT_RULE` | Rule re-rank score weight in final match score | No | `0.4` |
 | `MATCH_TOP_K` | Number of semantic candidates retrieved before rule re-ranking | No | `20` |
 | `BUDGET_FEASIBILITY_FACTOR` | Multiplier on annual turnover for budget feasibility check | No | `2.0` |
 | `INGEST_CRON` | Cron expression for scheduled automatic ingestion | No | `0 6 * * *` |
-| `LOG_LEVEL` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` | No | `INFO` |
+| `AGENT_MODEL` | Claude model used by the drafting agent | No | `claude-sonnet-4-6` |
+| `LOG_LEVEL` | Logging verbosity | No | `INFO` |
 
-> Eligibility rule thresholds (turnover ratio, minimum lead days, technical coverage threshold) live in `config/eligibility_rules.yaml` and are reloaded at runtime via `EligibilityEngine.reload()` without a server restart.
+> Eligibility rule thresholds live in `config/eligibility_rules.yaml` and are reloaded at runtime via `EligibilityEngine.reload()`. Agent prompts live in `prompts/{name}/v1.txt` and are reloaded on every call via `PromptLoader`.
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/companies` | Create or update a company profile (CPV codes, NUTS regions, turnover, capacity tags) |
+| `POST` | `/companies` | Create or update a company profile |
 | `GET` | `/companies/{company_id}` | Retrieve a company profile by ID |
 | `POST` | `/tenders/ingest` | Trigger an on-demand TED ingestion run; returns `{"ingested": N}` (HTTP 202) |
-| `GET` | `/tenders` | List persisted tenders, filterable by `status` and `cpv` query parameters |
-| `POST` | `/matches/run` | Run the full hybrid matching pipeline for `company_id`; persists and returns ranked `MatchResult` list |
+| `GET` | `/tenders` | List persisted tenders, filterable by `status` and `cpv` |
+| `POST` | `/tenders/{id}/ingest-doc` | Fetch the tender PDF from `raw_doc_uri`, extract text (pypdf), chunk, and embed into the `tender_docs` corpus (HTTP 202) |
+| `POST` | `/matches/run` | Run the full hybrid matching pipeline for `company_id` |
 | `GET` | `/matches` | Retrieve stored match results for `company_id`, sorted by score descending |
+| `POST` | `/drafts/run` | Body `{company_id, tender_id}`: run the ReAct drafting agent and return a `BidDraft` (status `needs_review`, HTTP 201) |
+| `GET` | `/drafts/{id}` | Retrieve a stored `BidDraft` by ID (tenant-scoped) |
+| `GET` | `/drafts/{id}/trace` | Retrieve the ReAct reasoning trace (thought/action/observation steps) |
 | `GET` | `/health` | Liveness probe |
 
-All endpoints accept the optional `X-Company-Id` header for multi-tenant context propagation.
+All endpoints accept the optional `X-Company-Id` header for multi-tenant context propagation. Draft endpoints enforce that the result requires mandatory human review before any submission.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 bidpilot/
+├── agent/
+│   ├── executor.py             # run_drafting_agent: create_react_agent + AgentExecutor, trace builder
+│   ├── prompt.py               # PromptLoader singleton (hot-reloadable file-based versioned prompts)
+│   └── tools.py                # Five @tool functions: extract_requirements, analyze_gaps,
+│                               #   retrieve_clauses, draft_section, self_check
+├── llm/
+│   ├── callbacks.py            # TokenCostCallback: accumulates input/output tokens per run
+│   ├── clients.py              # get_drafting_llm(): ChatAnthropic factory (model from settings)
+│   └── pricing.py              # TokenUsage dataclass with cost_usd computed from per-model rates
+├── prompts/
+│   ├── system/v1.txt           # ReAct system prompt (workflow instructions + tool format)
+│   ├── requirement_extraction/v1.txt
+│   ├── draft_section/v1.txt
+│   └── self_check/v1.txt
 ├── app/
-│   ├── main.py                     # FastAPI app factory, lifespan, router registration
+│   ├── main.py                 # FastAPI app factory, lifespan, router registration
 │   ├── api/
-│   │   ├── deps.py                 # set_tenant dependency: X-Company-Id header to ContextVar
+│   │   ├── deps.py             # set_tenant dependency
 │   │   └── routers/
-│   │       ├── companies.py        # POST /companies, GET /companies/{id}
-│   │       ├── tenders.py          # POST /tenders/ingest, GET /tenders
-│   │       └── matches.py          # POST /matches/run, GET /matches
+│   │       ├── companies.py
+│   │       ├── drafts.py       # POST /drafts/run, GET /drafts/{id}, GET /drafts/{id}/trace
+│   │       ├── matches.py
+│   │       └── tenders.py      # POST /tenders/ingest, GET /tenders, POST /tenders/{id}/ingest-doc
 │   ├── core/
-│   │   ├── context.py              # ContextVar[current_tenant]
-│   │   ├── exceptions.py           # BidPilotError hierarchy + global FastAPI handler
-│   │   ├── logging.py              # basicConfig structured logging setup
-│   │   └── settings.py             # pydantic-settings Settings (reads .env)
+│   │   ├── context.py
+│   │   ├── exceptions.py       # + DocumentParsingError, RequirementExtractionError, DraftingError
+│   │   ├── logging.py
+│   │   └── settings.py         # + agent_model (AGENT_MODEL env var)
 │   ├── ingestion/
-│   │   ├── base.py                 # TenderSource Protocol (fetch + normalize)
-│   │   ├── ted.py                  # TED eForms API v3 async connector and normaliser
-│   │   └── scheduler.py            # APScheduler cron pipeline (ingest_pipeline)
+│   │   ├── base.py
+│   │   ├── doc_parser.py       # parse_pdf_to_chunks: pypdf extraction + paragraph chunking
+│   │   ├── ted.py
+│   │   └── scheduler.py
 │   ├── matching/
-│   │   ├── eligibility.py          # EligibilityEngine: YAML rules, hot-reload, check()
-│   │   └── matcher.py              # run_matching: semantic retrieval + rule re-rank
+│   │   ├── eligibility.py
+│   │   └── matcher.py
 │   ├── models/
-│   │   ├── company.py              # CompanyProfile (CPV, NUTS, turnover, capacity_tags)
-│   │   ├── tender.py               # Tender, RawTender, TenderSource and TenderStatus enums
-│   │   └── match.py                # MatchResult, EligibilityCheck
+│   │   ├── company.py
+│   │   ├── draft.py            # ProposalCitation, RequirementItem, RequirementChecklist,
+│   │   │                       #   GapItem, GapReport, BidDraftSection, BidDraft
+│   │   ├── match.py
+│   │   └── tender.py
 │   ├── repositories/
-│   │   ├── audit.py                # fire_and_forget: non-blocking audit log writer
-│   │   ├── companies.py            # upsert_company, get_company
-│   │   ├── matches.py              # upsert_match, list_matches
-│   │   ├── mongo.py                # Motor async client + get_db()
-│   │   └── tenders.py              # upsert_tender, list_tenders
+│   │   ├── audit.py
+│   │   ├── companies.py
+│   │   ├── drafts.py           # upsert_draft, get_draft, save_trace, get_trace
+│   │   ├── matches.py
+│   │   ├── mongo.py
+│   │   └── tenders.py          # + get_tender
 │   └── vectorstore/
-│       └── chroma.py               # ChromaDB persistent client, upsert_tender_embedding, query_tenders
+│       ├── chroma.py           # tenders corpus
+│       └── tender_docs.py      # tender_docs corpus: upsert_chunks, query_tender_docs,
+│                               #   get_all_tender_chunks, has_tender_docs
 ├── config/
-│   └── eligibility_rules.yaml      # Declarative eligibility rule thresholds (hot-reload)
+│   └── eligibility_rules.yaml
 ├── tests/
-│   ├── conftest.py                 # Shared fixtures: company profile, tender meta dicts, TED payload
-│   ├── test_eligibility.py         # 7 tests: hard criteria, soft warnings, hot-reload, rule versioning
-│   ├── test_matcher.py             # 13 tests: CPV overlap, NUTS match, budget feasibility, rule score
-│   └── test_ted_normalize.py       # 4 tests: TED notice normalisation edge cases
-├── .env.example                    # Environment variable template
-├── .github/workflows/ci.yml        # GitHub Actions: lint + mypy + pytest (gated on main)
-├── .pre-commit-config.yaml         # ruff, mypy, detect-secrets pre-commit hooks
-└── pyproject.toml                  # Project metadata, dependencies, ruff/mypy/pytest config
+│   ├── conftest.py
+│   ├── test_doc_ingest.py
+│   ├── test_draft_pipeline.py
+│   ├── test_eligibility.py
+│   ├── test_gap_analysis.py
+│   ├── test_matcher.py
+│   ├── test_requirement_extraction.py
+│   ├── test_self_check.py
+│   └── test_ted_normalize.py
+├── .env.example
+├── .github/workflows/ci.yml
+├── .pre-commit-config.yaml
+└── pyproject.toml
 ```
 
 ---
 
-## 💡 Why BidPilot?
+## Roadmap
 
-| Decision | Rationale |
-|----------|-----------|
-| 🏢 **Supplier-side, not buyer-side** | Buyers have institutional procurement platforms. Suppliers, especially SMEs, have no dedicated tooling to discover and qualify for relevant tenders at scale. BidPilot is built exclusively for the supplier perspective. |
-| 🔍 **Hybrid match over pure vector** | Pure semantic search misses structural hard constraints (CPV codes, NUTS region, budget range). Pure keyword matching misses semantic similarity across languages and synonyms. The two-stage pipeline delivers both recall and precision. |
-| 💡 **Explainable reasons, no silent drops** | Every result includes a `reasons[]` list and a `failed_criteria[]` block. A supplier sees exactly why a tender scored high or was disqualified: no black-box filtering and no surprises. |
-| 📋 **Declarative hot-reload rules** | Eligibility criteria change regularly as regulations update and company financials evolve. YAML-driven rules that reload at runtime mean compliance changes take effect without a deployment cycle. |
-| 🗄️ **Shared public corpus, tenant-scoped profiles** | TED notices are public data, shared across all tenants. ChromaDB holds one corpus for all; MongoDB scopes company profiles, match results, and audit events per tenant via `ContextVar`. |
-| 🔥 **Fire-and-forget audit log** | Audit writes must never slow down API responses. `asyncio.ensure_future` dispatches the write without blocking the request path; failures log a warning and do not propagate to the caller. |
+- Phase 1 - Ingestion + Hybrid Match MVP (Complete)
+- Phase 2 - Eligibility Engine + CI (Complete)
+- Phase 3 - RAG Bid Drafting (ReAct agent, requirement extraction, gap analysis, cited drafts) (Complete)
+- Phase 4 - Award Analytics (ΔΙΑΥΓΕΙΑ/ΚΗΜΔΗΣ award data, historical pricing, win rates, dashboard)
+- Frontend - React 19 / TS / Vite / Tailwind v4 (Tender Feed + Bid Workspace)
 
 ---
 
-## 🔭 Roadmap
-
-- ✅ **Phase 1** - Ingestion + Hybrid Match MVP (Complete)
-- ✅ **Phase 2** - Eligibility Engine + CI (Complete)
-- 🔜 **Phase 3** - RAG Bid Drafting (ReAct agent, requirement extraction, gap checklist, cited drafts)
-- 🔜 **Phase 4** - Award Analytics (ΔΙΑΥΓΕΙΑ/ΚΗΜΔΗΣ award data, historical pricing, win rates, dashboard)
-- 🔜 **Frontend** - React 19 / TS / Vite / Tailwind v4 (Tender Feed + Bid Workspace)
-
----
-
-## 📄 License
+## License
 
 MIT. See [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
-<strong>⚡ Built by <a href="https://github.com/GiorgosPanagopoulos">Georgios Panagopoulos</a></strong><br/>
+<strong>Built by <a href="https://github.com/GiorgosPanagopoulos">Georgios Panagopoulos</a></strong><br/>
 <em>"I build things I'd trust with something that matters."</em>
 <br/><br/>
 <a href="https://github.com/GiorgosPanagopoulos"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white"/></a>
 <a href="https://linkedin.com/in/georgios-panagopoulos-9253842ba"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"/></a>
 <br/><br/>
-☕ Powered by mass amounts of caffeine & mass amounts of curiosity
+Powered by mass amounts of caffeine and mass amounts of curiosity
 </div>
