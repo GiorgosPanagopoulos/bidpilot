@@ -190,7 +190,7 @@ uvicorn app.main:app --reload
 | `MATCH_TOP_K` | Number of semantic candidates retrieved before rule re-ranking | No | `20` |
 | `BUDGET_FEASIBILITY_FACTOR` | Multiplier on annual turnover for budget feasibility check | No | `2.0` |
 | `INGEST_CRON` | Cron expression for scheduled automatic ingestion | No | `0 6 * * *` |
-| `AGENT_MODEL` | Claude model used by the drafting agent | No | `claude-sonnet-4-6` |
+| `AGENT_MODEL` | Anthropic model for the drafting agent | No | `claude-sonnet-4-5` |
 | `LOG_LEVEL` | Logging verbosity | No | `INFO` |
 
 > Eligibility rule thresholds live in `config/eligibility_rules.yaml` and are reloaded at runtime via `EligibilityEngine.reload()`. Agent prompts live in `prompts/{name}/v1.txt` and are reloaded on every call via `PromptLoader`.
