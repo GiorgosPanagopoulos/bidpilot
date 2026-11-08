@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 import httpx
 from fastapi import APIRouter, Depends, Query
 
@@ -17,9 +19,12 @@ router = APIRouter(prefix="/tenders", tags=["tenders"])
 
 
 @router.post("/ingest", status_code=202)
-async def trigger_ingest(_: User = Depends(require_admin)) -> dict:
-    count = await ingest_pipeline()
-    fire_and_forget("tenders.ingest", {"count": count})
+async def trigger_ingest(
+    days: int = Query(default=1, ge=1, le=60, description="How many days back to fetch"),
+    _: User = Depends(require_admin),
+) -> dict:
+    count = await ingest_pipeline(since=datetime.now(UTC) - timedelta(days=days))
+    fire_and_forget("tenders.ingest", {"count": count, "days": days})
     return {"ingested": count}
 
 

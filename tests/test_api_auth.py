@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import jwt
@@ -183,3 +184,14 @@ async def test_cors_allows_configured_origin_only(api):
 
     bad = await api.options("/drafts/run", headers={"Origin": "https://evil.example", **preflight})
     assert "access-control-allow-origin" not in bad.headers
+
+
+async def test_tender_ingest_days_window(api, make_user):
+    _, admin = await make_user("acme", "admin")
+
+    with patch("app.api.routers.tenders.ingest_pipeline", new=AsyncMock(return_value=3)) as pipe:
+        assert (await api.post("/tenders/ingest?days=14", headers=bearer(admin))).status_code == 202
+        assert (await api.post("/tenders/ingest?days=61", headers=bearer(admin))).status_code == 422
+
+    since = pipe.await_args.kwargs["since"]
+    assert 13.9 < (datetime.now(UTC) - since).total_seconds() / 86400 < 14.1

@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     mongo_db_name: str = Field("bidpilot", alias="MONGO_DB_NAME")
     chroma_path: str = Field("./chroma_data", alias="CHROMA_PATH")
     ted_api_base: str = Field("https://api.ted.europa.eu/v3", alias="TED_API_BASE")
+    # ISO 3166 alpha-3 buyer country filter for TED; empty = all countries
+    ted_buyer_country: str = Field("GRC", alias="TED_BUYER_COUNTRY")
 
     # matching weights
     weight_semantic: float = Field(0.6, alias="WEIGHT_SEMANTIC")

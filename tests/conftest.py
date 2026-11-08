@@ -2,7 +2,9 @@ import os
 
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-for-unit-tests-only-0123456789abcdef")  # pragma: allowlist secret
+os.environ.setdefault(
+    "SECRET_KEY", "test-secret-key-for-unit-tests-only-0123456789abcdef"
+)  # pragma: allowlist secret
 os.environ.setdefault("CORS_ORIGINS", "http://localhost:5173")
 
 from datetime import UTC, datetime, timedelta  # noqa: E402
@@ -51,13 +53,26 @@ def closed_tender_meta() -> dict:
 
 @pytest.fixture()
 def ted_notice_payload() -> dict:
+    # Shape of a live TED v3 search hit (Nov 2026), trimmed.
+    deadline = (datetime.now(UTC) + timedelta(days=30)).strftime("%Y-%m-%d") + "+02:00"
     return {
-        "ND": "12345678",
-        "TI": "Road Construction Services",
-        "PC": ["45000000", "45233000"],
-        "TW": ["EL30"],
-        "DD": (datetime.now(UTC) + timedelta(days=60)).strftime("%Y%m%d"),
-        "TVA": "3500000",
-        "TE": "Construction of road infrastructure in Attica region.",
-        "uri": "https://ted.europa.eu/en/notice/12345678",
+        "publication-number": "756583-2026",
+        "notice-title": {
+            "eng": "Greece - Boat scale models",
+            "ell": "Ελλάδα - Μοντέλα θαλάσσιων σκαφών",
+        },
+        "description-proc": {"ell": "Μουσείο Εναλίων Αρχαιοτήτων"},
+        "classification-cpv": ["34999420", "92311000", "34999420", "92311000"],
+        "place-of-performance": ["EL307", "GRC", "EL307", "GRC"],
+        "deadline-receipt-tender-date-lot": [deadline],
+        "estimated-value-proc": 3500000,
+        "estimated-value-cur-proc": "EUR",
+        "buyer-country": ["GRC"],
+        "links": {
+            "xml": {"MUL": "https://ted.europa.eu/en/notice/756583-2026/xml"},
+            "pdf": {
+                "ENG": "https://ted.europa.eu/en/notice/756583-2026/pdf",
+                "ELL": "https://ted.europa.eu/el/notice/756583-2026/pdf",
+            },
+        },
     }
