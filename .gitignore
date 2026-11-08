@@ -17,3 +17,6 @@ chroma_data/
 .secrets.baseline
 node_modules/
 frontend/dist/
+
+# local env overrides
+*.local
