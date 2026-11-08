@@ -8,6 +8,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+import bson
 from pymongo import ReturnDocument
 
 
@@ -23,6 +24,11 @@ def _apply_update(doc: dict[str, Any], update: dict[str, Any], inserting: bool) 
     if inserting:
         for k, v in update.get("$setOnInsert", {}).items():
             doc[k] = v
+
+
+def _check_bson(doc: dict[str, Any]) -> None:
+    # Fail like real Mongo on values BSON can't encode (e.g. Python Decimal).
+    bson.encode(doc)
 
 
 class _Cursor:
@@ -59,11 +65,13 @@ class FakeCollection:
         return _Cursor([d for d in self.docs if _matches(d, filt or {})])
 
     async def insert_one(self, doc: dict[str, Any]) -> None:
+        _check_bson(doc)
         self.docs.append(copy.deepcopy(doc))
 
     async def replace_one(
         self, filt: dict[str, Any], doc: dict[str, Any], upsert: bool = False
     ) -> None:
+        _check_bson(doc)
         existing = self._find(filt)
         if existing is not None:
             self.docs.remove(existing)
