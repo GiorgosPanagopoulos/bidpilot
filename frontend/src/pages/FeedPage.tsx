@@ -36,7 +36,7 @@ export function FeedPage() {
     <div className="flex h-full gap-0">
       {/* Sidebar panel */}
       <div className="flex w-72 shrink-0 flex-col gap-4 border-r border-[#1e2530] p-4">
-        <CompanyPanel />
+        <CompanyPanel key={profile?.id ?? "none"} />
 
         <div className="space-y-2">
           <label className="block text-xs text-[#8b93a0]">Status filter</label>

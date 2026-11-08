@@ -136,6 +136,23 @@ export interface TrendSeries {
   points: TrendPoint[];
 }
 
+export type Role = "admin" | "member" | "viewer";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  company_id: string;
+  role: Role;
+  is_demo: boolean;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: "bearer";
+  expires_in: number;
+  user: AuthUser;
+}
+
 export interface ApiErrorBody {
   detail: string;
 }

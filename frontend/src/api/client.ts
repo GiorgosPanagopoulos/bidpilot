@@ -1,3 +1,5 @@
+import { getValidToken, useAuthStore } from "../store/authStore";
+
 const BASE_URL = (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
 
 export class ApiError extends Error {
@@ -10,23 +12,12 @@ export class ApiError extends Error {
   }
 }
 
-function getCompanyId(): string | null {
-  try {
-    const raw = localStorage.getItem("bidpilot-company");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { state?: { companyId?: string } };
-    return parsed.state?.companyId ?? null;
-  } catch {
-    return null;
-  }
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const companyId = getCompanyId();
+  const token = getValidToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (companyId) headers["X-Company-Id"] = companyId;
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const response = await fetch(`${BASE_URL}${path}`, {
     ...init,
@@ -34,6 +25,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    // Expired or revoked token: drop the session so the route guard sends the user to /login.
+    if (response.status === 401 && token) useAuthStore.getState().logout();
+
     let detail = `HTTP ${response.status}`;
     try {
       const body = (await response.json()) as { detail?: string };

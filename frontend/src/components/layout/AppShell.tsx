@@ -1,10 +1,12 @@
 import { useLocation, Outlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { useCompanyBootstrap } from "../../hooks/useSession";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
 export function AppShell() {
   const location = useLocation();
+  useCompanyBootstrap();
 
   return (
     <div className="flex h-screen flex-col bg-[#0f1117]">

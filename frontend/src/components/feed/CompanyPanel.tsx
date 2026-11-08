@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { companiesApi } from "../../api/companies";
+import { useAuthStore } from "../../store/authStore";
 import { useCompanyStore } from "../../store/companyStore";
 import type { CompanyProfile } from "../../api/types";
 
 export function CompanyPanel() {
   const { profile, setCompany } = useCompanyStore();
-  const [showForm, setShowForm] = useState(!profile);
+  const canEdit = useAuthStore((s) => s.user?.role === "admin");
+  const [showForm, setShowForm] = useState(!profile && canEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -46,6 +48,14 @@ export function CompanyPanel() {
     }
   }
 
+  if (!profile && !canEdit) {
+    return (
+      <div className="rounded-lg border border-[#1e2530] bg-[#161a22] p-4 text-xs text-[#8b93a0]">
+        No company profile yet. An admin of your company needs to set it up.
+      </div>
+    );
+  }
+
   if (!showForm && profile) {
     return (
       <div className="rounded-lg border border-[#1e2530] bg-[#161a22] p-4">
@@ -56,12 +66,14 @@ export function CompanyPanel() {
               {profile.cpv_codes.length} CPV codes · {profile.regions.length} regions
             </p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="text-xs text-[#c9a84c] hover:text-[#a07c34]"
-          >
-            Edit
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="text-xs text-[#c9a84c] hover:text-[#a07c34]"
+            >
+              Edit
+            </button>
+          )}
         </div>
       </div>
     );
