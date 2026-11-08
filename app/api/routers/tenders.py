@@ -3,11 +3,12 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import set_tenant
+from app.api.deps import get_current_user, require_admin, require_writer
 from app.core.exceptions import DocumentParsingError, NotFoundError
 from app.ingestion.doc_parser import parse_pdf_to_chunks
 from app.ingestion.scheduler import ingest_pipeline
 from app.models.tender import Tender, TenderStatus
+from app.models.user import User
 from app.repositories.audit import fire_and_forget
 from app.repositories.tenders import get_tender, list_tenders
 from app.vectorstore.tender_docs import upsert_chunks
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/tenders", tags=["tenders"])
 
 
 @router.post("/ingest", status_code=202)
-async def trigger_ingest(_: None = Depends(set_tenant)) -> dict:
+async def trigger_ingest(_: User = Depends(require_admin)) -> dict:
     count = await ingest_pipeline()
     fire_and_forget("tenders.ingest", {"count": count})
     return {"ingested": count}
@@ -26,7 +27,7 @@ async def trigger_ingest(_: None = Depends(set_tenant)) -> dict:
 async def list_tenders_endpoint(
     status: TenderStatus | None = Query(default=None),
     cpv: str | None = Query(default=None),
-    _: None = Depends(set_tenant),
+    _: User = Depends(get_current_user),
 ) -> list[Tender]:
     return await list_tenders(status=status, cpv=cpv)
 
@@ -34,7 +35,7 @@ async def list_tenders_endpoint(
 @router.post("/{tender_id}/ingest-doc", status_code=202)
 async def ingest_doc(
     tender_id: str,
-    _: None = Depends(set_tenant),
+    _: User = Depends(require_writer),
 ) -> dict:
     tender = await get_tender(tender_id)
     if tender is None:

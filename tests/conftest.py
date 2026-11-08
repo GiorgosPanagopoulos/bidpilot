@@ -2,6 +2,8 @@ import os
 
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-unit-tests-only-0123456789abcdef")  # pragma: allowlist secret
+os.environ.setdefault("CORS_ORIGINS", "http://localhost:5173")
 
 from datetime import UTC, datetime, timedelta  # noqa: E402
 from decimal import Decimal  # noqa: E402
@@ -9,6 +11,8 @@ from decimal import Decimal  # noqa: E402
 import pytest  # noqa: E402
 
 from app.models.company import CompanyProfile  # noqa: E402
+
+pytest_plugins = ["tests.api_fixtures"]
 
 
 @pytest.fixture()

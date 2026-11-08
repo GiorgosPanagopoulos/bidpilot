@@ -56,5 +56,10 @@ class AwardIngestionError(BidPilotError):
     detail = "award ingestion failed"
 
 
+class DemoQuotaExceededError(BidPilotError):
+    status_code = 429
+    detail = "Demo limit reached for today, try again tomorrow."
+
+
 async def bidpilot_exception_handler(request: Request, exc: BidPilotError) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})

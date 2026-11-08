@@ -17,10 +17,9 @@ async def upsert_draft(draft: BidDraft) -> None:
 
 async def get_draft(draft_id: str) -> BidDraft | None:
     tenant = current_tenant.get()
-    query: dict[str, Any] = {"id": draft_id}
-    if tenant:
-        query["tenant"] = tenant
-    doc = await get_db()[COLLECTION].find_one(query)
+    if not tenant:
+        return None
+    doc = await get_db()[COLLECTION].find_one({"id": draft_id, "tenant": tenant})
     if doc is None:
         return None
     doc.pop("_id", None)
@@ -37,10 +36,9 @@ async def save_trace(draft_id: str, trace: list[dict[str, Any]]) -> None:
 
 async def get_trace(draft_id: str) -> list[dict[str, Any]] | None:
     tenant = current_tenant.get()
-    query: dict[str, Any] = {"id": draft_id}
-    if tenant:
-        query["tenant"] = tenant
-    doc = await get_db()[COLLECTION].find_one(query, {"_trace": 1})
+    if not tenant:
+        return None
+    doc = await get_db()[COLLECTION].find_one({"id": draft_id, "tenant": tenant}, {"_trace": 1})
     if doc is None:
         return None
     return doc.get("_trace", [])
